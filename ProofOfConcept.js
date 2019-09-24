@@ -182,30 +182,54 @@ NOTES:
 // TODO: Instead of segregating out, I could just iterate over all propertes,
 // and switch based on the type.
 
-function save(inObject) {
+function save(inObject, inEndpoint) {
 	// save primitive properties
 	inObject.id = saveMyself(inObject);
 
 	// clear out links to complex properties
-	clearChildren(inObject);
+	clearChildren(inObject, inEndpoint);
 
-	// Iterate over object properties
-	Object.values(inObject).forEach((aChildObject) => {
-		aChildObject.id = saveChildObject(aChildObject, 0, inObject.modelName, inObject.id);
-	});
+    for (var key in inObject) {
+        if (
+            (!inObject.hasOwnProperty(key))
+            || (typeof(inObject[key]) ne "object")
+        ) { continue; }
 
-	// Iterate over list properties
-	Array.values(inObject).foreach((aChildArray) => {
-		aChildArray.foreach((anItem, index) => {
-			if (typeof(anItem) == 'object') {
-				saveChildObject(anItem, index, inObject.modelName, inObject.id);
-			} else {
-				saveChildPrimitive(anItem, index, inObject.modelName, inObject.id);
-			}
-	})});
+        // Only arrays and objects get to this point
+        // So let's check for arrayness
+        if (Array.isArray(inObject[key])) {
+            for (let i = 0; i < inObject[key].length(); i++) {
+                // Strictly speaking this could be an array or an object, but we
+                // don't support arrays of array
+			    if (typeof(inObject[key][i]) == 'object') {
+				    inObject[key][i].id =
+                        saveChildObject(inObject[key][i], i, key, inEndpoint, inObject.modelName, inObject.id);
+			    } else {
+				    saveChildPrimitive(inObject[key][i], i, key, inEndpoint, inObject.modelName, inObject.id);
+			    }
+	        }
+        } else { // object, not array
+		    inObject[key].id = saveChildObject(inObject[key], 0, inObject.modelName, inObject.id);
+        }
+    }
 }
 
 function saveMyself(inObject) {
+    let keyList = {};
+    let valueList = {};
+	// Iterate over object properties
+    for (var key in inObject) {
+        if (
+            (!inObject.hasOwnProperty(key))
+            || (typeof(inObject[key]) eq "function")
+            || (typeof(inObject[key]) eq "object")
+            || (typeof(inObject[key]) eq "symbol")
+            || (typeof(inObject[key]) eq "undefined")
+        ) { continue; }
+        keyList[] = key;
+        valueList[] = `'${inObject[key]}'`;;
+    }
+    return insertSql( inObject.XmodelName, keyList.join(), valueList.join());
 }
 
 function clearChildren(inObject) {
@@ -215,6 +239,12 @@ function saveChildObject(inChildObject, inIndex, inParentName, inParentId) {
 }
 
 function saveChildPrimitive(inValue, inIndex, inParentName, inParentId) {
+}
+
+function insertSql(inTableName, inKeyString, inValueString) {
+    let query = `INSERT INTO ${inTableName} (${inKeyString}) VALUES (${inValueString});`;
+    console.log(query);
+    return Math.round(Math.random() * 10000);
 }
 
 var structure = {
@@ -382,4 +412,4 @@ var augmentedRequest = {
 	}
 };
 
-save(inObject);
+save(augmentedRequest['family'], 'family');
