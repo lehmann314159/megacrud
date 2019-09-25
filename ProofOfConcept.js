@@ -199,17 +199,17 @@ function save(inObject, inEndpoint) {
         // So let's check for arrayness
         if (Array.isArray(inObject[key])) {
             for (let i = 0; i < inObject[key].length(); i++) {
-                // Strictly speaking this could be an array or an object, but we
-                // don't support arrays of array
 			    if (typeof(inObject[key][i]) == 'object') {
+                    // Strictly speaking this could be an array or an object, but we
+                    // don't support arrays of array
 				    inObject[key][i].id =
-                        saveChildObject(inObject[key][i], i, key, inEndpoint, inObject.modelName, inObject.id);
+                        saveChildObject(inObject[key][i], i, key, inEndpoint, inObject.modelName, inObject.id); // might not need inObject.modelName
 			    } else {
-				    saveChildPrimitive(inObject[key][i], i, key, inEndpoint, inObject.modelName, inObject.id);
+				    saveChildPrimitive(inObject[key][i], i, key, inEndpoint, inObject.modelName, inObject.id); // might not need inObject.modelName
 			    }
 	        }
         } else { // object, not array
-		    inObject[key].id = saveChildObject(inObject[key], 0, inObject.modelName, inObject.id);
+		    inObject[key].id = saveChildObject(inObject[key], 0, inEndpoint, inObject.modelName, inObject.id); // might not need inObject.modelName
         }
     }
 }
@@ -229,10 +229,14 @@ function saveMyself(inObject) {
         keyList[] = key;
         valueList[] = `'${inObject[key]}'`;;
     }
-    return insertSql( inObject.XmodelName, keyList.join(), valueList.join());
+    return insertSql(inObject.XmodelName, keyList.join(), valueList.join());
 }
 
-function clearChildren(inObject) {
+function clearChildren(inObject, inEndpoint) {
+    // TODO: add something for primitives
+    for (var key in inObject) {
+        if (!inObject.hasOwnProperty(key)
+    });
 }
 
 function saveChildObject(inChildObject, inIndex, inParentName, inParentId) {
