@@ -233,9 +233,18 @@ function saveMyself(inObject) {
 }
 
 function clearChildren(inObject, inEndpoint) {
-    // TODO: add something for primitives
     for (var key in inObject) {
-        if (!inObject.hasOwnProperty(key)
+        if (
+			(!inObject.hasOwnProperty(key))
+            || (typeof(inObject[key]) eq "function")
+            || (typeof(inObject[key]) eq "symbol")
+            || (typeof(inObject[key]) eq "undefined")
+        ) { continue; }
+
+		// Look for primitives, then arrays/objects
+		if (typeof(inObject[key]) ne "object") {
+			let junctionTable = 
+
     });
 }
 
