@@ -182,18 +182,16 @@ NOTES:
 // TODO: Instead of segregating out, I could just iterate over all propertes,
 // and switch based on the type.
 
-function save(inObject, inEndpoint) {
+function save(inObject) {
 	// save primitive properties
-	inObject.id = saveMyself(inObject);
+	saveMyself(inObject);
 
-	// clear out links to complex properties
-	clearChildren(inObject, inEndpoint);
+	// clear out links to complex properties (and child rows)
+	clearChildrenAndLinks(inObject);
 
+    // recurse to children objects
     for (var key in inObject) {
-        if (
-            (!inObject.hasOwnProperty(key))
-            || (typeof(inObject[key]) ne "object")
-        ) { continue; }
+        if (typeof(inObject[key]) ne "object") { continue; }
 
         // Only arrays and objects get to this point
         // So let's check for arrayness
@@ -203,28 +201,43 @@ function save(inObject, inEndpoint) {
                     // Strictly speaking this could be an array or an object, but we
                     // don't support arrays of array
 				    inObject[key][i].id =
-                        saveChildObject(inObject[key][i], i, key, inEndpoint, inObject.modelName, inObject.id); // might not need inObject.modelName
+                        saveChildObject(inObject[key][i], i, inObject.id);
 			    } else {
-				    saveChildPrimitive(inObject[key][i], i, key, inEndpoint, inObject.modelName, inObject.id); // might not need inObject.modelName
+                    // Primitives don't have anywhere to store their path, so we will
+                    // construct it and pass it
+                    let newEndpoint = inObject.XendpointPath + "_" + key;
+				    saveChildPrimitive(inObject[key][i], i, newEndpoint, inObject.id);
 			    }
 	        }
         } else { // object, not array
-		    inObject[key].id = saveChildObject(inObject[key], 0, inEndpoint, inObject.modelName, inObject.id); // might not need inObject.modelName
+		    inObject[key].id = saveChildObject(inObject[key], 0, inObject.id);
         }
     }
+    return inObject.id;
+}
+
+function saveChildObject(inChild, inIndex, inParentId) {
+    // recurse the object qua object
+    inChild.id = save(inChild);
+
+    // Save links to parent
+    
+}
+
+function saveChildPrimitive(inValue, inIndex, inTableName, inParentId) {
+    // Save to the weighted junction table
 }
 
 function saveMyself(inObject) {
     let keyList = {};
     let valueList = {};
-	// Iterate over object properties
+	// Iterate over the object's properties, looking for primitives
     for (var key in inObject) {
         if (
-            (!inObject.hasOwnProperty(key))
-            || (typeof(inObject[key]) eq "function")
-            || (typeof(inObject[key]) eq "object")
-            || (typeof(inObject[key]) eq "symbol")
-            || (typeof(inObject[key]) eq "undefined")
+            (typeof(inObject[key]) == "function")
+            || (typeof(inObject[key]) == "object")
+            || (typeof(inObject[key]) == "symbol")
+            || (typeof(inObject[key]) == "undefined")
         ) { continue; }
         keyList[] = key;
         valueList[] = `'${inObject[key]}'`;;
@@ -232,32 +245,42 @@ function saveMyself(inObject) {
     return insertSql(inObject.XmodelName, keyList.join(), valueList.join());
 }
 
-function clearChildren(inObject, inEndpoint) {
-    for (var key in inObject) {
-        if (
-			(!inObject.hasOwnProperty(key))
-            || (typeof(inObject[key]) eq "function")
-            || (typeof(inObject[key]) eq "symbol")
-            || (typeof(inObject[key]) eq "undefined")
-        ) { continue; }
+function clearChildrenAndLinks(inParent) {
+    inParent.keys().forEach( (aChild) => {
+        // Only object and array properties will have junction tables
+        if (typeof(inParent[aChild]) != "object") { continue; }
 
-		// Look for primitives, then arrays/objects
-		if (typeof(inObject[key]) ne "object") {
-			let junctionTable = 
-
-    });
+		// Look for arrays first [array items could be primitives or objects
+        // Then handle single objects
+		if (Array.isArray(inParent[child])) {
+            // Array
+            inParent[child].forEach( (item) => {
+                // If the child is an object, remove from the model table
+                if (typeof(item) == 'object') {
+                    clearChildModelByParentId(item.XmodelName, inParent.id);
+                }
+                // clear the junction entries
+			    deleteSql(item.XendpointPath, {"cid" => item.id});
+            });
+        } else {
+            // Object
+            clearChildModelByParentId(aChild.XmodelName, inParent.id);
+			deleteSql(aChild.XendpointPath, {"cid" => inParent.id});
+        }
+    }   
 }
 
-function saveChildObject(inChildObject, inIndex, inParentName, inParentId) {
-}
-
-function saveChildPrimitive(inValue, inIndex, inParentName, inParentId) {
+function clearChildModelByParentId(inModelName, inParentId) {
 }
 
 function insertSql(inTableName, inKeyString, inValueString) {
     let query = `INSERT INTO ${inTableName} (${inKeyString}) VALUES (${inValueString});`;
     console.log(query);
     return Math.round(Math.random() * 10000);
+}
+
+function deleteSql(inTableName, inCriteria) {
+
 }
 
 var structure = {
@@ -289,6 +312,7 @@ var structure = {
 		},
 		"family": {
 			"nickname": "string",
+			"luckyNumbers": "[number]",
 			"spouse1": "person",
 			"spouse2": "person",
 			"children": "[boy|girl]"
@@ -300,6 +324,7 @@ var autoindex = 101;
 var webRequest = {
 	"family": {
 		"nickname": "Dem Folx",
+        "luckyNumbers": [1, 2, 3, 5, 7, 11, 13],
 		"spouse1": {
 			"name": "Bob"
 			"children": [
@@ -357,16 +382,20 @@ var webRequest = {
 var augmentedRequest = {
 	"family": {
 		"id": 101,
-		"XModelName": "family",
+		"XmodelName": "family",
+        "XendpointPath": "family",
 		"nickname": "Dem Folx",
+        "luckyNumbers": [1, 2, 3, 5, 7, 11, 13],
 		"spouse1": {
 			"id": 201,
-			"XModelName": "person",
+			"XmodelName": "person",
+            "XendpointPath": "family_spouse1",
 			"name": "Bob"
 			"children": [
 				{
 					"id": 301,
 					"XmodelName": "boy",
+					"XendpointPath": "family_spouse1_children",
 					"name": "Todd",
 					"dwoob": "high",
 					"pet": {
@@ -425,4 +454,4 @@ var augmentedRequest = {
 	}
 };
 
-save(augmentedRequest['family'], 'family');
+save(augmentedRequest['family']);

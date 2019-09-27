@@ -1,0 +1,12 @@
+* ProofOfConcept.js -- evolving the augmented request to facilitate the functions
+  * soft delete
+  * state (implemented via patch?)
+  * room for triggers
+
+* Actual code (with unit tests)
+  * Validator
+  * Verify OpenAPI spec
+  * node server
+  * mongo
+  * SQL
+
