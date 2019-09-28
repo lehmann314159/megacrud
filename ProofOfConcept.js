@@ -191,7 +191,7 @@ function save(inObject) {
 
     // recurse to children objects
     for (var key in inObject) {
-        if (typeof(inObject[key]) ne "object") { continue; }
+        if (typeof(inObject[key]) != "object") { return; }
 
         // Only arrays and objects get to this point
         // So let's check for arrayness
@@ -210,27 +210,29 @@ function save(inObject) {
 			    }
 	        }
         } else { // object, not array
-		    inObject[key].id = saveChildObject(inObject[key], 0, inObject.id);
+		    saveChildObject(inObject[key], 0, inObject.id);
         }
     }
-    return inObject.id;
 }
 
-function saveChildObject(inChild, inIndex, inParentId) {
+function saveChildObject(inChild, inOrdinal, inParentId) {
     // recurse the object qua object
-    inChild.id = save(inChild);
+    save(inChild);
 
     // Save links to parent
-    
+    insertSql(inChild.XendpointPath, "pid, cid, ordinal",
+		`${inParentId}, ${inChild.id}, ${inOrdinal}`);
 }
 
-function saveChildPrimitive(inValue, inIndex, inTableName, inParentId) {
+function saveChildPrimitive(inValue, inOrdinal, inTableName, inParentId) {
     // Save to the weighted junction table
+	insertSql(inTableName, "pid, ordinal, value",
+		`${inParentId}, ${inOrdinal}, ${inValue}`);
 }
 
 function saveMyself(inObject) {
-    let keyList = {};
-    let valueList = {};
+    let keyList = new Array();
+    let valueList = new Array();
 	// Iterate over the object's properties, looking for primitives
     for (var key in inObject) {
         if (
@@ -238,39 +240,41 @@ function saveMyself(inObject) {
             || (typeof(inObject[key]) == "object")
             || (typeof(inObject[key]) == "symbol")
             || (typeof(inObject[key]) == "undefined")
-        ) { continue; }
-        keyList[] = key;
-        valueList[] = `'${inObject[key]}'`;;
+        ) { return; }
+        keyList.push(key);
+        valueList.push(`'${inObject[key]}'`);
     }
-    return insertSql(inObject.XmodelName, keyList.join(), valueList.join());
+    inObject.id = insertSql(inObject.XmodelName, keyList.join(), valueList.join());
 }
 
 function clearChildrenAndLinks(inParent) {
-    inParent.keys().forEach( (aChild) => {
+    Object.keys(inParent).forEach( (aChild) => {
         // Only object and array properties will have junction tables
-        if (typeof(inParent[aChild]) != "object") { continue; }
+        if (typeof(inParent[aChild]) != "object") { return; }
 
 		// Look for arrays first [array items could be primitives or objects
         // Then handle single objects
-		if (Array.isArray(inParent[child])) {
+		if (Array.isArray(inParent[aChild])) {
             // Array
-            inParent[child].forEach( (item) => {
+            inParent[aChild].forEach( (item) => {
                 // If the child is an object, remove from the model table
                 if (typeof(item) == 'object') {
                     clearChildModelByParentId(item.XmodelName, inParent.id);
                 }
                 // clear the junction entries
-			    deleteSql(item.XendpointPath, {"cid" => item.id});
+			    deleteSql(item.XendpointPath, {"cid": item.id});
             });
         } else {
             // Object
             clearChildModelByParentId(aChild.XmodelName, inParent.id);
-			deleteSql(aChild.XendpointPath, {"cid" => inParent.id});
+			deleteSql(aChild.XendpointPath, {"cid": aChild.id});
         }
-    }   
+    }   );
 }
 
 function clearChildModelByParentId(inModelName, inParentId) {
+	let query = `DELETE FROM ${inModelName} WHERE pid = ${inParentId};`;
+	console.log(query);
 }
 
 function insertSql(inTableName, inKeyString, inValueString) {
@@ -280,7 +284,10 @@ function insertSql(inTableName, inKeyString, inValueString) {
 }
 
 function deleteSql(inTableName, inCriteria) {
-
+	let clause = Object.keys(inCriteria)
+		.map(key => `${key} = '${inCriteria[key]}'`).join(" AND ");
+	let query = `DELETE FROM ${inTableName} WHERE ${clause};`;
+	console.log(query);
 }
 
 var structure = {
@@ -320,13 +327,12 @@ var structure = {
 	}
 };
 
-var autoindex = 101;
 var webRequest = {
 	"family": {
 		"nickname": "Dem Folx",
         "luckyNumbers": [1, 2, 3, 5, 7, 11, 13],
 		"spouse1": {
-			"name": "Bob"
+			"name": "Bob",
 			"children": [
 				{
 					"XmodelName": "boy",
@@ -364,6 +370,7 @@ var webRequest = {
 					"XmodelName": "cat",
 					"name": "Lucky",
 					"volume": 3
+				}
 			},
 			{
 				"XmodelName": "girl",
@@ -390,7 +397,7 @@ var augmentedRequest = {
 			"id": 201,
 			"XmodelName": "person",
             "XendpointPath": "family_spouse1",
-			"name": "Bob"
+			"name": "Bob",
 			"children": [
 				{
 					"id": 301,
@@ -437,6 +444,7 @@ var augmentedRequest = {
 					"XmodelName": "cat",
 					"name": "Lucky",
 					"volume": 3
+				}
 			},
 			{
 				"id": 402,
