@@ -424,6 +424,7 @@ var augmentedRequest = {
 					"pet": {
 						"id": 501,
 						"XmodelName": "cat",
+						"Xpath": "family_spouse1_children_pet",
 						"name": "Ganks",
 						"volume": 5
 					}
@@ -445,6 +446,7 @@ var augmentedRequest = {
 					"pet": {
 						"id": 601,
 						"XmodelName": "dog",
+						"Xpath": "family_spouse1_children_pet",
 						"name": "Nix",
 						"volume": 7
 					}
@@ -461,6 +463,7 @@ var augmentedRequest = {
 				"pet": {
 					"id": 502,
 					"XmodelName": "cat",
+					"Xpath": "family_children_pet",
 					"name": "Lucky",
 					"volume": 3
 				}
@@ -474,6 +477,7 @@ var augmentedRequest = {
 				"pet": {
 					"id": 602,
 					"XmodelName": "dog",
+					"Xpath": "family_children_pet",
 					"name": "Chewy",
 					"volume": 8
 				}
