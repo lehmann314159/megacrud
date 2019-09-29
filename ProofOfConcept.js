@@ -11,7 +11,7 @@ I want to start with well-specified models, and then generate the following:
 */
 
 
-/* Long ass note to remind me of what I came up with
+/* Long note to remind me of what I came up with
 Mongo lets you just map things willy nilly.  SQL is a bit more... stodgy.
 
 So for SQL purposes I'll add ids to everything, figure out to what table each
@@ -20,6 +20,9 @@ objects below...
 
 webRequest is the request object.  This is what the client would send.  It's
 tied to the properties of the endpoint, which makes sense.
+
+augmentedRequest holds the pre-processing that we'd do in order to safely
+traverse the layered save.
 
 In order for us to save this stuff in SQL, we need table names (which are tied
 to the model name) and ids.
@@ -161,12 +164,19 @@ NOTES:
 
 2. family_children_pet is kind of a problem.  children is an array of boy|girl.
    boy has cat, girl has dog.  Neither is ambiguous by designation, but are
-   effectively mbiguous by the upstream ambiguity.  I could solve this generally
-   by listing the tablename for each part of the join, but I don't know if there
-   are any distros of mysql that will let you use column names to set joins.
+   effectively ambiguous because of the upstream ambiguity.  I could solve this
+   generally by listing the tablename for each part of the join, but I don't
+   know if there are any distros of mysql that will let you use column names to
+   set joins without a second query.
 
    That said, this is less of a problem for straight writes than it is for
-   analysis.  Standard reads will be handled by the mongo ETL.
+   analysis.  Standard reads will be handled by the mongo datastore.
+
+3. Right now I don't try to distinguish between a POST and a PUT.  I assume that
+   the thing to do is to nuke everything in orbit, and then re-populate.  One
+   clear and (maybe?) easy optimization is to avoid some of the empty deletes
+   when we know that the top level is an insert.  But speed is less important
+   than correctness at this stage.
 
 */
 
@@ -179,9 +189,8 @@ NOTES:
  *    a) If a primitive, save in the lookup table
  *    b) If an object, save as such
  */
-// TODO: Instead of segregating out, I could just iterate over all propertes,
-// and switch based on the type.
 
+ // Top-level recursive save function
 function save(inObject) {
 	// save primitive properties
 	saveMyself(inObject);
@@ -191,12 +200,12 @@ function save(inObject) {
 
     // recurse to children objects
     for (var key in inObject) {
-        if (typeof(inObject[key]) != "object") { return; }
+        if (typeof(inObject[key]) != "object") { continue; }
 
         // Only arrays and objects get to this point
         // So let's check for arrayness
         if (Array.isArray(inObject[key])) {
-            for (let i = 0; i < inObject[key].length(); i++) {
+            for (let i = 0; i < inObject[key].length; i++) {
 			    if (typeof(inObject[key][i]) == 'object') {
                     // Strictly speaking this could be an array or an object, but we
                     // don't support arrays of array
@@ -205,7 +214,7 @@ function save(inObject) {
 			    } else {
                     // Primitives don't have anywhere to store their path, so we will
                     // construct it and pass it
-                    let newEndpoint = inObject.XendpointPath + "_" + key;
+                    let newEndpoint = inObject.Xpath + "_" + key;
 				    saveChildPrimitive(inObject[key][i], i, newEndpoint, inObject.id);
 			    }
 	        }
@@ -220,7 +229,7 @@ function saveChildObject(inChild, inOrdinal, inParentId) {
     save(inChild);
 
     // Save links to parent
-    insertSql(inChild.XendpointPath, "pid, cid, ordinal",
+    insertSql(inChild.Xpath, "pid, cid, ordinal",
 		`${inParentId}, ${inChild.id}, ${inOrdinal}`);
 }
 
@@ -239,8 +248,11 @@ function saveMyself(inObject) {
             (typeof(inObject[key]) == "function")
             || (typeof(inObject[key]) == "object")
             || (typeof(inObject[key]) == "symbol")
-            || (typeof(inObject[key]) == "undefined")
-        ) { return; }
+			|| (typeof(inObject[key]) == "undefined")
+			// We want to exclude primitive metas that we've added
+			|| (key == "XmodelName")
+			|| (key == "Xpath")
+        ) { continue; }
         keyList.push(key);
         valueList.push(`'${inObject[key]}'`);
     }
@@ -250,30 +262,34 @@ function saveMyself(inObject) {
 function clearChildrenAndLinks(inParent) {
     Object.keys(inParent).forEach( (aChild) => {
         // Only object and array properties will have junction tables
-        if (typeof(inParent[aChild]) != "object") { return; }
-
-		// Look for arrays first [array items could be primitives or objects
-        // Then handle single objects
-		if (Array.isArray(inParent[aChild])) {
-            // Array
-            inParent[aChild].forEach( (item) => {
-                // If the child is an object, remove from the model table
-                if (typeof(item) == 'object') {
-                    clearChildModelByParentId(item.XmodelName, inParent.id);
-                }
-                // clear the junction entries
-			    deleteSql(item.XendpointPath, {"cid": item.id});
-            });
-        } else {
-            // Object
-            clearChildModelByParentId(aChild.XmodelName, inParent.id);
-			deleteSql(aChild.XendpointPath, {"cid": aChild.id});
-        }
-    }   );
+        if (typeof(inParent[aChild]) == "object") {
+			// Look for arrays first [array items could be primitives or objects
+    	    // Then handle single objects
+			if (Array.isArray(inParent[aChild])) {
+            	// Array
+	            inParent[aChild].forEach( (item) => {
+    	            // If the child is an object, remove from the model table
+        	        if (typeof(item) == 'object') {
+						clearChildModelByParentId(item.XmodelName, item.Xpath, inParent.id);
+						deleteSql(item.Xpath, {"pid": inParent.id});
+					} else { // primitive
+						let tempPath = inParent.Xpath + "_" + aChild;
+						deleteSql(tempPath, {"pid": inParent.id, "value": item});
+					}
+            	});
+        	} else {
+        	    // Object
+				clearChildModelByParentId(inParent[aChild].XmodelName,
+					inParent[aChild].Xpath, inParent.id);
+				deleteSql(inParent[aChild].Xpath, {"pid": inParent.id});
+        	}
+		}
+	});
 }
 
-function clearChildModelByParentId(inModelName, inParentId) {
-	let query = `DELETE FROM ${inModelName} WHERE pid = ${inParentId};`;
+function clearChildModelByParentId(inModelName, inPath, inParentId) {
+	let subquery = `SELECT cid FROM ${inPath} WHERE pid = ${inParentId}`;
+	let query = `DELETE FROM ${inModelName} WHERE id IN (${subquery});`;
 	console.log(query);
 }
 
@@ -390,19 +406,19 @@ var augmentedRequest = {
 	"family": {
 		"id": 101,
 		"XmodelName": "family",
-        "XendpointPath": "family",
+        "Xpath": "family",
 		"nickname": "Dem Folx",
         "luckyNumbers": [1, 2, 3, 5, 7, 11, 13],
 		"spouse1": {
 			"id": 201,
 			"XmodelName": "person",
-            "XendpointPath": "family_spouse1",
+            "Xpath": "family_spouse1",
 			"name": "Bob",
 			"children": [
 				{
 					"id": 301,
 					"XmodelName": "boy",
-					"XendpointPath": "family_spouse1_children",
+					"Xpath": "family_spouse1_children",
 					"name": "Todd",
 					"dwoob": "high",
 					"pet": {
@@ -417,11 +433,13 @@ var augmentedRequest = {
 		"spouse2": {
 			"id": 202,
 			"XmodelName": "person",
+			"Xpath": "family_spouse2",
 			"name": "Samantha",
 			"children": [
 				{
 					"id": 401,
 					"XmodelName": "girl",
+					"Xpath": "family_spouse2_children",
 					"name": "Tina",
 					"flurb": "medium",
 					"pet": {
@@ -437,6 +455,7 @@ var augmentedRequest = {
 			{
 				"id": 302,
 				"XmodelName": "boy",
+				"Xpath": "family_children",
 				"name": "Chuckie",
 				"dwoob": "low",
 				"pet": {
@@ -449,6 +468,7 @@ var augmentedRequest = {
 			{
 				"id": 402,
 				"XmodelName": "girl",
+				"Xpath": "family_children",
 				"name": "Stevie",
 				"flurb": "high",
 				"pet": {
