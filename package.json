@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "A REST Server Creation Tool",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test": "jest --verbose"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/lehmann314159/megacrud.git"
