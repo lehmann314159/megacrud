@@ -52,6 +52,7 @@ module.exports = class Validator {
 	isWellFormed() {
 		let data = this.data;
 
+		// TODO: Go more granular with the exceptions
 		// Check OpenAPI Properties
 		if (!data.hasOwnProperty('openApiProperties')
 			|| !data.openApiProperties.hasOwnProperty('version')
@@ -61,27 +62,41 @@ module.exports = class Validator {
 			|| !data.openApiProperties.info.hasOwnProperty('version')
 			|| !data.openApiProperties.info.hasOwnProperty('contact')
 			|| !data.openApiProperties.info.contact.hasOwnProperty('email')
-			|| !data.hasOwnProperty('mongoProperties')
+		) {
+			throw "Missing OpenAPI Header"
+		};
+
+		if (!data.hasOwnProperty('mongoProperties')
 			|| !data.mongoProperties.hasOwnProperty('serverName')
 			|| !data.mongoProperties.hasOwnProperty('collectionName')
-			|| !data.hasOwnProperty('nodeProperties')
+		) {
+			throw "Missing Mongo Header";
+		}
+		
+		if (!data.hasOwnProperty('nodeProperties')
 			|| !data.nodeProperties.hasOwnProperty('serverPort')
 		) {
-			throw "missing header...\n";
-			return false;
+			throw "Missing Node Header";
+		}
+
+		if (!data.hasOwnProperty('databaseProperties')
+			|| !data.databaseProperties.hasOwnProperty('softDelete')
+			|| !data.databaseProperties.hasOwnProperty('idName')
+			|| !data.databaseProperties.hasOwnProperty('idType')
+		) {
+			throw "Missing Database Header";
 		}
 
 		// Check models
 		if (!data.hasOwnProperty('modelList')
 			|| (!Array.isArray(data.modelList))
 		) {
-			throw "missing model list...\n";
-			return false;
+			throw "Missing Model List";
 		}
 
 		let modelFieldList = [
-			'name', 'modelName', 'refName', 'endpoint', 'idName',
-			'idDescription', 'idType', 'fields', 'example'
+			'nameSingular', 'namePlural', 'displayFieldName',
+			'summary', 'description', 'fields', 'example'
 		];
 
 		for (const model of data.modelList) {
@@ -89,8 +104,7 @@ module.exports = class Validator {
 				// Check for required properties of the model
 				if (!model.hasOwnProperty(modelField))
 				{
-					throw "missing model property " + modelField + "...\n";
-					return false;
+					throw `Missing Model Property ${model}:${modelField}`;
 				}
 			}
 		}
