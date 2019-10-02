@@ -30,6 +30,7 @@ module.exports = class Validator {
 
 		// read inputFile
 		this.data = JSON.parse(fs.readFileSync(this.inputFile));
+
 		return true;
 	}
 
@@ -50,8 +51,8 @@ module.exports = class Validator {
 	// Sees if the data is ok to use //
 	///////////////////////////////////
 	isWellFormed() {
-		let data = this.data;
 
+		let data = this.data;
 		// TODO: Go more granular with the exceptions
 		// Check OpenAPI Properties
 		if (!data.hasOwnProperty('openApiProperties')
@@ -63,7 +64,7 @@ module.exports = class Validator {
 			|| !data.openApiProperties.info.hasOwnProperty('contact')
 			|| !data.openApiProperties.info.contact.hasOwnProperty('email')
 		) {
-			throw "Missing OpenAPI Header";
+			throw Error("Missing OpenAPI Header");
 		};
 
 		if (!data.hasOwnProperty('mongoProperties')

@@ -108,7 +108,7 @@
 				"luckyNumbers": "[number]",
 				"spouse1": "person",
 				"spouse2": "person",
-				"children": "boy|girl"
+				"children": "[boy|girl]"
 			},
 			"example": {
 				"nickname": "The Smiths",
