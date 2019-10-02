@@ -1,0 +1,33 @@
+{
+	"openApiProperties": {
+		"version": "3.0.1",
+		"info": {
+			"title": "Family",
+			"description" : "Demo Structure for Exploration",
+			"version": "1.0.0-oas3",
+			"contact": {
+				"email": "lehmann314159@gmail.com"
+			}
+		},
+		"tags": [
+			{
+				"beings": "boy, cat, dog, girl, person"
+			},
+			{
+				"structures": "family"
+			}
+		]
+	},
+	"mongoProperties": {
+		"serverName": "mongodb://localhost:27017",
+		"collectionName": "family"
+	},
+	"nodeProperties": {
+		"serverPort": "3000"
+	},
+	"databaseProperties": {
+		"softDelete": true,
+		"idName": "id",
+		"idType": "string"
+	}
+}

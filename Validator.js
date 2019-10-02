@@ -63,7 +63,7 @@ module.exports = class Validator {
 			|| !data.openApiProperties.info.hasOwnProperty('contact')
 			|| !data.openApiProperties.info.contact.hasOwnProperty('email')
 		) {
-			throw "Missing OpenAPI Header"
+			throw "Missing OpenAPI Header";
 		};
 
 		if (!data.hasOwnProperty('mongoProperties')

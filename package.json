@@ -4,7 +4,7 @@
   "description": "A REST Server Creation Tool",
   "main": "index.js",
   "scripts": {
-    "test": "jest --verbose"
+    "test": "cd test; jest --verbose"
   },
   "repository": {
     "type": "git",

@@ -1,0 +1,180 @@
+{
+	"mongoProperties": {
+		"serverName": "mongodb://localhost:27017",
+		"collectionName": "family"
+	},
+	"nodeProperties": {
+		"serverPort": "3000"
+	},
+	"databaseProperties": {
+		"softDelete": true,
+		"idName": "id",
+		"idType": "string"
+	},
+	"modelList": [
+		{
+			"nameSinglular": "boy",
+			"namePlural": "boys",
+			"displayFieldName": "name",
+			"tags": [
+				"beings"
+			],
+			"summary": "A boy is a child with a cat",
+			"description": "A boy is a child with a cat",
+			"useSoftDelete": "true",
+			"fields": {
+				"name": "string",
+				"dwoob": "string",
+				"pet": "cat"
+			},
+			"example": {
+				"name": "Todd",
+				"dwoob": "high",
+				"pet": {
+					"name": "Ganks",
+					"volume": 5
+				}
+			}
+		},
+		{
+			"nameSingular": "cat",
+			"namePlural": "cats",
+			"displayFieldName": "name",
+			"tags": [
+				"beings"
+			],
+			"summary": "Boys have cats",
+			"description": "Boys have cats",
+			"useSoftDelete": "true",
+			"fields": {
+				"name": "string",
+				"volume": "number"
+			},
+			"example": {
+				"name": "Katie",
+				"volume": 9
+			}
+		},
+		{
+			"nameSingular": "dog",
+			"namePlural": "dogs",
+			"displayFieldName": "name",
+			"tags": [
+				"beings"
+			],
+			"summary": "Girls have dogs",
+			"description": "Girls have dogs",
+			"useSoftDelete": "true",
+			"fields": {
+				"name": "string",
+				"volume": "number"
+			},
+			"example": {
+				"name": "Fido",
+				"volume": 3
+			}
+		},
+		{
+			"nameSingular": "family",
+			"namePlural": "families",
+			"displayFieldName": "nickname",
+			"tags": [
+				"structures"
+			],
+			"summary": "",
+			"description": "",
+			"useSoftDelete": "true",
+			"fields": {
+				"nickname": "string",
+				"luckyNumbers": "[number]",
+				"spouse1": "person",
+				"spouse2": "person",
+				"children": "boy|girl"
+			},
+			"example": {
+				"nickname": "The Smiths",
+				"luckyNumbers": [
+					2, 3, 5, 7
+				],
+				"spouse1": {
+					"name": "Kris",
+					"children": [
+						{
+							"name": "Tango",
+							"dwoob": "low",
+							"pet": {
+								"name": "Missy",
+								"volume": 2
+							}
+						}
+					]
+				},
+				"spouse2": {
+					"name": "Jamie",
+					"children": [
+						{
+							"name": "Cash",
+							"dwoob": "low",
+							"pet": {
+								"name": "King",
+								"volume": 5
+							}
+						}
+					]
+				}
+			}
+		},
+		{
+			"nameSinglular": "girl",
+			"namePlural": "girls",				
+			"displayFieldName": "name",
+			"tags": [
+				"beings"
+			],
+			"summary": "A girl is a child with a dog",
+			"description": "A girl is a child with a dog",
+			"useSoftDelete": "true",
+			"fields": {
+				"name": "string",
+				"flurb": "string",
+				"pet": "dog"
+			},
+			"example": {
+				"name": "Tina",
+				"dwoob": "medium",
+				"pet": {
+					"name": "Nix",
+					"volume": 7
+				}
+			}
+		},
+		{
+			"nameSinglular": "person",
+			"namePlural": "people",				
+			"displayFieldName": "name",
+			"tags": [
+				"beings"
+			],
+			"summary": "People are people, so how can it be",
+			"description": "you and I should get along so awfully",
+			"useSoftDelete": "true",
+			"fields": {
+				"name": "string",
+				"children": "[boy|girl]"
+			},
+			"example": {
+				"name": "Josh",
+				"children": [
+					{
+						"name": "Gene",
+						"dwoob": "medium",
+						"pet": {
+							"name": "Spot",
+							"volume": 0
+						}
+					}
+				]
+			}
+		}
+	]
+}
