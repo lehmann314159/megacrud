@@ -15,24 +15,23 @@ test('badOpenApi.json should throw', () => {
     let badVal = new Validator('badOpenApi.json');
     expect(() => {badVal.isWellFormed(); }).toThrow(Error);
 });
-/*
+
 test('badMongo.json should throw', () => {
     let badVal = new Validator('badMongo.json');
-    expect(badVal.isWellFormed()).toThrow(Error);
+    expect(() => {badVal.isWellFormed(); }).toThrow(Error);
 });
 
 test('badNode.json should throw', () => {
     let badVal = new Validator('badNode.json');
-    expect(badVal.isWellFormed()).toThrow(Error);
+    expect(() => {badVal.isWellFormed(); }).toThrow(Error);
 });
 
 test('badDatabase.json should throw', () => {
     let badVal = new Validator('badDatabase.json');
-    expect(badVal.isWellFormed()).toThrow(Error);
+    expect(() => {badVal.isWellFormed(); }).toThrow(Error);
 });
 
 test('badModel.json should throw', () => {
     let badVal = new Validator('badModel.json');
-    expect(badVal.isWellFormed()).toThrow(Error);
+    expect(() => {badVal.isWellFormed(); }).toThrow(Error);
 });
-*/

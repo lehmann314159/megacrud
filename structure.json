@@ -28,7 +28,8 @@
 	"databaseProperties": {
 		"softDelete": true,
 		"idName": "id",
-		"idType": "string"
+		"idType": "string",
+		"varcharLength": 255
 	},
 	"modelList": [
 		{

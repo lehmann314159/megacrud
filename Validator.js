@@ -71,13 +71,13 @@ module.exports = class Validator {
 			|| !data.mongoProperties.hasOwnProperty('serverName')
 			|| !data.mongoProperties.hasOwnProperty('collectionName')
 		) {
-			throw "Missing Mongo Header";
+			throw Error("Missing Mongo Header");
 		}
 		
 		if (!data.hasOwnProperty('nodeProperties')
 			|| !data.nodeProperties.hasOwnProperty('serverPort')
 		) {
-			throw "Missing Node Header";
+			throw Error("Missing Node Header");
 		}
 
 		if (!data.hasOwnProperty('databaseProperties')
@@ -85,14 +85,14 @@ module.exports = class Validator {
 			|| !data.databaseProperties.hasOwnProperty('idName')
 			|| !data.databaseProperties.hasOwnProperty('idType')
 		) {
-			throw "Missing Database Header";
+			throw Error("Missing Database Header");
 		}
 
 		// Check models
 		if (!data.hasOwnProperty('modelList')
 			|| (!Array.isArray(data.modelList))
 		) {
-			throw "Missing Model List";
+			throw Error("Missing Model List");
 		}
 
 		let modelFieldList = [
