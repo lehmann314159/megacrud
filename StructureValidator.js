@@ -1,8 +1,8 @@
-// The Validator Class ensures that the structure.json file is well-formed
+// The StructureValidator Class ensures that the structure.json file is well-formed
 // and acts as a container for it.  Even though we'll be generating this file
 // we want to make sure it's going to have a chance of being successful.
 
-module.exports = class Validator {
+module.exports = class StructureValidator {
 	// constructor
 	constructor(inputFile) {
 		this.inputFile = inputFile;

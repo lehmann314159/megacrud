@@ -19,23 +19,25 @@ module.exports = class SqlEngine {
     ///////////////////////////////
     // Top Level Schema Creation //
     ///////////////////////////////
-    generateSqlSchema() {
-        return this.generateSqlSchemaDropTables()
-            + this.generateSqlSchemaCreateTables();
+    generateSchema(inData) {
+        if (!inData) { inData = this.data; }
+        return this.generateSchemaDrop(inData)
+            + this.generateSchemaCreate(inData);
     }
 
     ///////////////////////////////////////
     // Generates "DROP TABLE" statements //
     ///////////////////////////////////////
-    generateSqlSchemaDropTables() {
+    generateSqlSchemaDropTables(inData) {
+        if (!inData) { inData = this.data; }
+
         let sql = "";
         for (var aModel of this.data.modelList) {
-                aModel['Xpath'] = (inPath) ? `${inPath}_${aModel.nameSingular}`
-                    : aModel.nameSingular;
+            aModel['Xpath'] = aModel.nameSingular;
             sql += SqlEngine.generateModelDrop(aModel.nameSingular);
             Object.keys(aModel.fields).forEach( (aChild) => {
                 if (!Megacrud.isJsonPrimitive(aModel.fields[aChild])) {
-                    sql += SqlEngine.generateJunctionDrop()
+                    //sql += SqlEngine.generateSqlSchemaDropTables(aModel.fields[aChild]()
                 }
             });
         }
